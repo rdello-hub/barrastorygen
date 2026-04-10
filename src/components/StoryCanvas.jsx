@@ -448,7 +448,7 @@ const StoryCanvas = React.forwardRef(function StoryCanvas(
         backgroundColor: tpl.bg,
       }}
     >
-      {/* Real <img> background for resilient export */}
+      {/* Background Image: Render first so it's behind everything */}
       {currentBgImage && (
         <img 
           src={currentBgImage} 
@@ -460,19 +460,36 @@ const StoryCanvas = React.forwardRef(function StoryCanvas(
         />
       )}
 
+      {/* Overlay for custom upload backgrounds to ensure readability */}
       {state.backgroundImage && (
         <div style={{ position: 'absolute', inset: 0, background: 'rgba(10,14,26,0.65)', zIndex: 1 }} />
       )}
 
+      {/* 
+          BRANDING LOGIC:
+          - If usingBakedTemplate (Navy/White): DO NOT render BrandHeader/Footer. 
+            The logo is already in the background image. Add safe padding.
+          - Otherwise (Clean color or Custom Upload): Render code-generated branding.
+      */}
       {!usingBakedTemplate && (
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 6, background: `linear-gradient(90deg, ${tpl.accentColor}, transparent)`, zIndex: 3 }} />
+        <>
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 6, background: `linear-gradient(90deg, ${tpl.accentColor}, transparent)`, zIndex: 3 }} />
+          <div className="canvas-header" style={{ position: 'relative', zIndex: 2 }}>
+            <BrandHeader color={tpl.logoColor} mutedColor={tpl.mutedColor} customLogo={state.customLogo} />
+          </div>
+        </>
       )}
 
-      <div className="canvas-header" style={{ position: 'relative', zIndex: 2 }}>
-        <BrandHeader color={tpl.logoColor} mutedColor={tpl.mutedColor} customLogo={state.customLogo} />
-      </div>
-
-      <div className="canvas-content" style={{ position: 'relative', zIndex: 2, flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div 
+        className="canvas-content" 
+        style={{ 
+          position: 'relative', zIndex: 2, flex: 1, 
+          display: 'flex', flexDirection: 'column', overflow: 'hidden',
+          // Safe zones for baked templates to avoid overlap with logo (top) and disclaimer (bottom)
+          paddingTop: usingBakedTemplate ? 240 : 0,
+          paddingBottom: usingBakedTemplate ? 180 : 0,
+        }}
+      >
         <LayoutContent
           layout={layout} state={state} tpl={tpl}
           onFieldChange={onFieldChange}
@@ -481,9 +498,11 @@ const StoryCanvas = React.forwardRef(function StoryCanvas(
         />
       </div>
 
-      <div className="canvas-footer" style={{ position: 'relative', zIndex: 2 }}>
-        <BrandFooter color={tpl.logoColor} isDark={tpl.isDark} />
-      </div>
+      {!usingBakedTemplate && (
+        <div className="canvas-footer" style={{ position: 'relative', zIndex: 2 }}>
+          <BrandFooter color={tpl.logoColor} isDark={tpl.isDark} />
+        </div>
+      )}
     </div>
   );
 });

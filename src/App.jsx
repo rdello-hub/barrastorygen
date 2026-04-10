@@ -2,7 +2,7 @@ import './index.css';
 import { useRef, useState, useEffect } from 'react';
 import { LAYOUTS, DEFAULT_STATE } from './presets.js';
 import { useStoryState } from './useStoryState.js';
-import StoryCanvas from './components/StoryCanvas.jsx';
+import StoryCanvas, { HighlightToolbar } from './components/StoryCanvas.jsx';
 import LeftSidebar from './components/LeftSidebar.jsx';
 import RightSidebar from './components/RightSidebar.jsx';
 import TopBar, { exportToPng } from './components/TopBar.jsx';
@@ -10,26 +10,48 @@ import TopBar, { exportToPng } from './components/TopBar.jsx';
 export default function App() {
   const canvasRef   = useRef(null);
   const stageRef    = useRef(null);
-  const scaleRef    = useRef(null); // the scaled wrapper div
-  const [scale, setScale]       = useState(0.5);
+  const scaleRef    = useRef(null);
+  const [scale, setScale]             = useState(0.5);
   const [activeField, setActiveField] = useState(null);
   const [isDragging, setIsDragging]   = useState(false);
   const [isExporting, setIsExporting] = useState(false);
-  const [activeMobileTab, setActiveMobileTab] = useState('layout'); // layout | content | design | ai | image
+  const [activeMobileTab, setActiveMobileTab] = useState('layout');
 
-    addBullet, removeBullet, setBullet, setImageBox, setSize, setCustomLogo, setAiProp,
+  const {
+    state,
+    update,
+    setContent,
+    setFieldHtml,
+    setLayout,
+    setTemplate,
+    setBg,
+    setViewMode,
+    addBullet,
+    removeBullet,
+    setBullet,
+    setBulletDesc,
+    setImageBox,
+    setSize,
+    setCustomLogo,
+    setAiProp,
     saved,
   } = useStoryState(DEFAULT_STATE);
 
   const layout = LAYOUTS.find((l) => l.id === state.layoutId) || LAYOUTS[0];
 
-  // ── Bullet sync: when right sidebar sets a bullet field, sync content.bullets ──
-  function handleFieldChange(field, value) {
-    if (field.startsWith('bullet_')) {
+  // ── Field change: routes canvas edits to correct state updater ──────
+  function handleFieldChange(field, value, html) {
+    if (field.startsWith('bulletDesc_')) {
+      const idx = parseInt(field.split('_')[1], 10);
+      setBulletDesc(idx, value);
+      if (html) setFieldHtml(field, html);
+    } else if (field.startsWith('bullet_')) {
       const idx = parseInt(field.split('_')[1], 10);
       setBullet(idx, value);
+      if (html) setFieldHtml(`bullet_${idx}`, html);
     } else {
       setContent(field, value);
+      if (html) setFieldHtml(field, html);
     }
   }
 
@@ -52,10 +74,7 @@ export default function App() {
 
     function handleDragLeave(e) {
       e.preventDefault();
-      // Only set to false if leaving the window, not children
-      if (e.clientX === 0 || e.clientY === 0) {
-        setIsDragging(false);
-      }
+      if (e.clientX === 0 || e.clientY === 0) setIsDragging(false);
     }
 
     function handleDrop(e) {
@@ -98,32 +117,29 @@ export default function App() {
     return () => ro.disconnect();
   }, [state.viewMode]);
 
-  // ── Native Image Save ──
-  // Removed automatic overlay generation to enforce robust button-based export
-
   // ── Reset to layout defaults ────────────────────────────────────────
   function handleReset() {
     update(() => ({ ...DEFAULT_STATE, layoutId: state.layoutId, content: layout.defaultContent }));
   }
 
-  // ── AI Auto-Parse Logic ──────────────────────────────────────────
+  // ── AI Auto-Parse Logic ─────────────────────────────────────────────
   function handleAutoParse(rawText) {
     if (!rawText.trim()) return;
-    
+
     const lines = rawText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
     if (lines.length === 0) return;
 
     const newContent = { ...state.content };
     const bullets = [];
-    
+
     newContent.title = lines[0];
     let startIdx = 1;
-    
+
     if (lines[1] && lines[1].length < 100 && !lines[1].match(/^[-•*]/)) {
       newContent.subtitle = lines[1];
       startIdx = 2;
     }
-    
+
     for (let i = startIdx; i < lines.length; i++) {
       const line = lines[i];
       if (line.match(/^[-•*]/)) {
@@ -134,12 +150,12 @@ export default function App() {
         newContent.paragraph2 = line;
       }
     }
-    
+
     if (bullets.length > 0) {
       newContent.bullets = bullets;
+      newContent.bulletsDesc = bullets.map(() => '');
     }
 
-    // ── Smart Layout Selection ──
     let bestLayoutId = state.layoutId;
     const hasImage = !!state.imageBox?.src;
 
@@ -156,7 +172,8 @@ export default function App() {
     update(prev => ({
       ...prev,
       layoutId: bestLayoutId,
-      content: { ...prev.content, ...newContent }
+      content: { ...prev.content, ...newContent },
+      contentHtml: {},
     }));
   }
 
@@ -187,16 +204,20 @@ export default function App() {
 
   // ── Derived view flags ──────────────────────────────────────────────
   const vm = state.viewMode || 'split';
-  const showLeft    = vm !== 'preview';
-  const showRight   = vm !== 'preview';
-  const sidebarsOn  = vm === 'split' || vm === 'editor';
+  const showLeft   = vm !== 'preview';
+  const showRight  = vm !== 'preview';
+  const sidebarsOn = vm === 'split' || vm === 'editor';
 
   return (
     <div className={`app-container layout-${vm}`}>
+
+      {/* ── HIGHLIGHT TOOLBAR (floats over canvas selection) ──────── */}
+      <HighlightToolbar />
+
       {/* ── DRAG OVERLAY ────────────────────────────────────────── */}
       {isDragging && (
         <div style={{
-          position: 'fixed', inset: 0, zIndex: 9999,
+          position: 'fixed', inset: 0, zIndex: 9998,
           background: 'rgba(39,80,158,0.85)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           backdropFilter: 'blur(4px)',
@@ -260,7 +281,6 @@ export default function App() {
             ⏳ Preparazione immagine in corso...
           </div>
         )}
-        {/* Outer div that holds the scaled canvas at correct pixel size */}
         <div style={{
           width:  1080 * scale,
           height: 1920 * scale,
@@ -270,7 +290,6 @@ export default function App() {
           position: 'relative',
           flexShrink: 0,
         }}>
-          {/* Inner div that holds the REAL 1080×1920 canvas transformed down */}
           <div
             ref={scaleRef}
             style={{
@@ -287,11 +306,9 @@ export default function App() {
               onFieldChange={handleFieldChange}
               activeField={activeField}
               setActiveField={setActiveField}
-              viewMode={vm}
             />
           </div>
         </div>
-        {/* Scale badge */}
         <span style={{
           position: 'absolute', bottom: 12, right: 16,
           fontSize: 10, color: 'var(--white-60)', letterSpacing: '0.06em',
@@ -310,35 +327,36 @@ export default function App() {
           addBullet={addBullet}
           removeBullet={removeBullet}
           setBullet={setBullet}
+          setBulletDesc={setBulletDesc}
         />
       ) : null}
 
       {/* ── MOBILE NAV ──────────────────────────────────────────── */}
       <nav className="mobile-nav">
-        <MobileNavItem 
-          active={activeMobileTab === 'layout'} 
+        <MobileNavItem
+          active={activeMobileTab === 'layout'}
           onClick={() => setActiveMobileTab('layout')}
-          icon="📐" label="Layout" 
+          icon="📐" label="Layout"
         />
-        <MobileNavItem 
-          active={activeMobileTab === 'content'} 
+        <MobileNavItem
+          active={activeMobileTab === 'content'}
           onClick={() => setActiveMobileTab('content')}
-          icon="📝" label="Testo" 
+          icon="📝" label="Testo"
         />
-        <MobileNavItem 
-          active={activeMobileTab === 'design'} 
+        <MobileNavItem
+          active={activeMobileTab === 'design'}
           onClick={() => setActiveMobileTab('design')}
-          icon="🎨" label="Design" 
+          icon="🎨" label="Design"
         />
-        <MobileNavItem 
-          active={activeMobileTab === 'image'} 
+        <MobileNavItem
+          active={activeMobileTab === 'image'}
           onClick={() => setActiveMobileTab('image')}
-          icon="🖼️" label="Image" 
+          icon="🖼️" label="Image"
         />
-        <MobileNavItem 
-          active={activeMobileTab === 'ai'} 
+        <MobileNavItem
+          active={activeMobileTab === 'ai'}
           onClick={() => setActiveMobileTab('ai')}
-          icon="🤖" label="AI" 
+          icon="🤖" label="AI"
         />
       </nav>
     </div>

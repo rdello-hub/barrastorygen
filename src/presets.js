@@ -31,6 +31,7 @@ export const LAYOUTS = [
         'Troppa liquidità ferma sul conto corrente.',
         'Nessuna revisione annuale del rischio.',
       ],
+      bulletsDesc: ['', '', '', ''],
     },
   },
   {
@@ -47,6 +48,7 @@ export const LAYOUTS = [
         'Un ETF equivalente costa lo 0,15%.',
         'Su 10 anni, la differenza è enorme.',
       ],
+      bulletsDesc: ['', '', ''],
       paragraph1: 'La consulenza indipendente non vende prodotti. Ti aiuta a costruire un patrimonio reale nel tempo.',
     },
   },
@@ -156,6 +158,7 @@ export const DEFAULT_STATE = {
   backgroundImage: null,
   viewMode: 'split', // 'editor' | 'split' | 'preview'
   content: LAYOUTS[0].defaultContent,
+  contentHtml: {}, // rich HTML overrides per field (for text highlights)
   imageBox: {
     src: null,
     size: 65,

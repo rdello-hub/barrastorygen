@@ -26,13 +26,26 @@ export function useStoryState(initial) {
     });
   }, []);
 
+  // Plain text content (clears any rich HTML override for that field)
   const setContent = useCallback((field, value) => {
-    update((prev) => ({ ...prev, content: { ...prev.content, [field]: value } }));
+    update((prev) => ({
+      ...prev,
+      content: { ...prev.content, [field]: value },
+      contentHtml: { ...(prev.contentHtml || {}), [field]: null },
+    }));
   }, [update]);
 
-  // Set a layout — resets content to layout defaults
+  // Rich HTML content override (for highlights applied on canvas)
+  const setFieldHtml = useCallback((field, html) => {
+    update((prev) => ({
+      ...prev,
+      contentHtml: { ...(prev.contentHtml || {}), [field]: html },
+    }));
+  }, [update]);
+
+  // Set a layout — resets content and HTML to layout defaults
   const setLayout = useCallback((layoutId, defaultContent) => {
-    update(() => ({ ...initial, layoutId, content: defaultContent }));
+    update(() => ({ ...initial, layoutId, content: defaultContent, contentHtml: {} }));
   }, [update, initial]);
 
   const setTemplate = useCallback((templateId) => {
@@ -51,14 +64,20 @@ export function useStoryState(initial) {
   const addBullet = useCallback(() => {
     update((prev) => {
       const bullets = [...(prev.content.bullets || []), ''];
-      return { ...prev, content: { ...prev.content, bullets } };
+      const bulletsDesc = [...(prev.content.bulletsDesc || []), ''];
+      return { ...prev, content: { ...prev.content, bullets, bulletsDesc } };
     });
   }, [update]);
 
   const removeBullet = useCallback((idx) => {
     update((prev) => {
       const bullets = (prev.content.bullets || []).filter((_, i) => i !== idx);
-      return { ...prev, content: { ...prev.content, bullets } };
+      const bulletsDesc = (prev.content.bulletsDesc || []).filter((_, i) => i !== idx);
+      // Also clean up any HTML overrides for this bullet index
+      const contentHtml = { ...(prev.contentHtml || {}) };
+      delete contentHtml[`bullet_${idx}`];
+      delete contentHtml[`bulletDesc_${idx}`];
+      return { ...prev, content: { ...prev.content, bullets, bulletsDesc }, contentHtml };
     });
   }, [update]);
 
@@ -66,7 +85,20 @@ export function useStoryState(initial) {
     update((prev) => {
       const bullets = [...(prev.content.bullets || [])];
       bullets[idx] = value;
-      return { ...prev, content: { ...prev.content, bullets } };
+      return {
+        ...prev,
+        content: { ...prev.content, bullets },
+        contentHtml: { ...(prev.contentHtml || {}), [`bullet_${idx}`]: null },
+      };
+    });
+  }, [update]);
+
+  // Bullet description (sub-text below a bullet, toggled by checkbox)
+  const setBulletDesc = useCallback((idx, value) => {
+    update((prev) => {
+      const bulletsDesc = [...(prev.content.bulletsDesc || [])];
+      bulletsDesc[idx] = value;
+      return { ...prev, content: { ...prev.content, bulletsDesc } };
     });
   }, [update]);
 
@@ -94,6 +126,7 @@ export function useStoryState(initial) {
     state,
     update,
     setContent,
+    setFieldHtml,
     setLayout,
     setTemplate,
     setBg,
@@ -101,6 +134,7 @@ export function useStoryState(initial) {
     addBullet,
     removeBullet,
     setBullet,
+    setBulletDesc,
     setImageBox,
     setSize,
     setCustomLogo,

@@ -15,11 +15,28 @@ const SIZE_RANGES = {
   bullets:   { min: 24, max: 70,  step: 2 },
 };
 
-export default function RightSidebar({ state, setContent, setSize, addBullet, removeBullet, setBullet }) {
+export default function RightSidebar({ state, setContent, setSize, addBullet, removeBullet, setBullet, setBulletDesc }) {
   const [activeTab, setActiveTab] = useState('testo');
+  // track which bullets have their description input expanded
+  const [expandedDescs, setExpandedDescs] = useState(() => new Set());
+
   const layout = LAYOUTS.find((l) => l.id === state.layoutId) || LAYOUTS[0];
   const { content, sizes = {} } = state;
   const zones = layout.zones;
+
+  function toggleDesc(i) {
+    setExpandedDescs((prev) => {
+      const next = new Set(prev);
+      if (next.has(i)) {
+        next.delete(i);
+        // Clear the description value when collapsing (optional UX choice)
+        // setBulletDesc(i, '');
+      } else {
+        next.add(i);
+      }
+      return next;
+    });
+  }
 
   const fieldLabels = {
     title: 'Titolo',
@@ -172,26 +189,91 @@ export default function RightSidebar({ state, setContent, setSize, addBullet, re
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {(content.bullets || []).map((bullet, i) => (
-                  <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-                    <div style={{
-                      width: 10, height: 10, borderRadius: '50%',
-                      background: 'var(--yellow)', flexShrink: 0, marginTop: 14,
-                    }} />
-                    <textarea
-                      rows={2}
-                      value={bullet}
-                      placeholder={`Punto ${i + 1}…`}
-                      onChange={(e) => setBullet(i, e.target.value)}
-                      style={{ flex: 1, resize: 'vertical', lineHeight: 1.5, fontSize: 12 }}
-                    />
-                    <button
-                      className="btn btn-ghost"
-                      style={{ paddingTop: 6, paddingBottom: 6, paddingLeft: 9, paddingRight: 9, fontSize: 15, color: 'rgba(255,80,80,0.7)', flexShrink: 0 }}
-                      onClick={() => removeBullet(i)} title="Rimuovi"
-                    >✕</button>
-                  </div>
-                ))}
+                {(content.bullets || []).map((bullet, i) => {
+                  const isExpanded = expandedDescs.has(i);
+                  const descValue = content.bulletsDesc?.[i] ?? '';
+
+                  return (
+                    <div key={i} style={{
+                      background: 'var(--white-10)',
+                      border: '1px solid var(--white-20)',
+                      borderRadius: 10,
+                      overflow: 'hidden',
+                    }}>
+                      {/* ── Bullet text row ── */}
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', padding: '10px 10px 8px 10px' }}>
+                        <div style={{
+                          width: 8, height: 8, borderRadius: '50%',
+                          background: 'var(--yellow)', flexShrink: 0, marginTop: 16,
+                        }} />
+                        <textarea
+                          rows={2}
+                          value={bullet}
+                          placeholder={`Punto ${i + 1}…`}
+                          onChange={(e) => setBullet(i, e.target.value)}
+                          style={{ flex: 1, resize: 'vertical', lineHeight: 1.5, fontSize: 12 }}
+                        />
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flexShrink: 0 }}>
+                          {/* Description toggle checkbox */}
+                          <button
+                            title={isExpanded ? 'Nascondi descrizione' : 'Aggiungi descrizione al punto'}
+                            onClick={() => toggleDesc(i)}
+                            style={{
+                              width: 26, height: 26,
+                              borderRadius: 5,
+                              border: `1.5px solid ${isExpanded ? 'var(--yellow)' : 'var(--white-20)'}`,
+                              background: isExpanded ? 'rgba(245,255,133,0.15)' : 'transparent',
+                              cursor: 'pointer',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontSize: 14,
+                              color: isExpanded ? 'var(--yellow)' : 'var(--white-60)',
+                              transition: 'all 0.15s',
+                            }}
+                          >
+                            {isExpanded ? '−' : '+'}
+                          </button>
+                          {/* Remove bullet */}
+                          <button
+                            className="btn btn-ghost"
+                            style={{ width: 26, height: 26, padding: 0, fontSize: 13, color: 'rgba(255,80,80,0.7)', flexShrink: 0 }}
+                            onClick={() => removeBullet(i)} title="Rimuovi punto"
+                          >✕</button>
+                        </div>
+                      </div>
+
+                      {/* ── Description row (collapsible) ── */}
+                      {isExpanded && (
+                        <div style={{
+                          borderTop: '1px solid rgba(245,255,133,0.15)',
+                          background: 'rgba(245,255,133,0.03)',
+                          padding: '8px 10px 10px 26px',
+                        }}>
+                          <div style={{
+                            fontSize: 9, fontWeight: 700, color: 'var(--yellow)',
+                            letterSpacing: '0.07em', textTransform: 'uppercase',
+                            marginBottom: 6,
+                          }}>
+                            Descrizione aggiuntiva
+                          </div>
+                          <textarea
+                            rows={2}
+                            value={descValue}
+                            placeholder="Testo descrittivo sotto il punto…"
+                            onChange={(e) => setBulletDesc(i, e.target.value)}
+                            style={{
+                              width: '100%', resize: 'vertical', lineHeight: 1.5, fontSize: 11,
+                              background: 'rgba(245,255,133,0.04)',
+                              borderColor: 'rgba(245,255,133,0.2)',
+                            }}
+                          />
+                          <div style={{ fontSize: 10, color: 'var(--white-60)', marginTop: 4, lineHeight: 1.5 }}>
+                            Appare sul canvas sotto il punto, in carattere più piccolo.
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
@@ -200,7 +282,7 @@ export default function RightSidebar({ state, setContent, setSize, addBullet, re
 
             <div className="divider" />
             <p style={{ fontSize: 11, color: 'var(--white-60)', lineHeight: 1.65 }}>
-              Puoi modificare i punti anche cliccando direttamente sul canvas.
+              Clicca <strong style={{ color: 'var(--yellow)' }}>+</strong> accanto a un punto per aggiungere una descrizione. Puoi modificare i testi anche direttamente sul canvas.
             </p>
           </>
         )}
@@ -213,7 +295,7 @@ export default function RightSidebar({ state, setContent, setSize, addBullet, re
             <TipCard n="02" t="Un dato, un punto" b="Non sovraccaricare la story. Una sola informazione per slide converte meglio." />
             <TipCard n="03" t="CTA chiaro" b="Ogni storia deve finire con un'azione precisa. 'Scorri su', 'Link in bio', 'Rispondimi'." />
             <TipCard n="04" t="Bullets corti" b="Ogni bullet deve contenere una sola idea. Max 10-12 parole per punto." />
-            <TipCard n="05" t="Contrasto visivo" b="Usa il Pale Yellow per i punti chiave. I testi muted rafforzano le info secondarie." />
+            <TipCard n="05" t="Evidenziazione" b="Seleziona parole chiave sul canvas per applicare un colore di evidenziazione contrastante con la palette." />
           </div>
         )}
       </div>

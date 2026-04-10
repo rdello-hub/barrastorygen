@@ -140,9 +140,7 @@ export default function LeftSidebar({
             }
           }
           
-          if (actionType === 'magic' && magic.sizes) {
-            Object.entries(magic.sizes).forEach(([k, v]) => setSize(k, v));
-          }
+          // Note: sizes are managed by RightSidebar, not set here directly
           
           setAiResponse(actionType === 'magic' ? "✨ Storia Generata con Successo! Ho scelto il layout '" + magic.layoutId + "' e ottimizzato i testi." : "✅ Testo analizzato e strutturato nei campi!");
         } catch (parseErr) {

@@ -1,5 +1,113 @@
-import React from 'react';
+import React, { useRef, useLayoutEffect, useEffect, useState } from 'react';
 import { TEMPLATES, BRAND } from '../presets.js';
+
+// ─── HIGHLIGHT COLORS (high contrast vs Dark Navy / Royal Blue / Pale Yellow) ─
+export const HIGHLIGHT_COLORS = [
+  { name: 'Giallo Neon',   color: 'rgba(255,230,0,0.78)',   text: '#000' },
+  { name: 'Corallo',       color: 'rgba(255,75,75,0.75)',    text: '#fff' },
+  { name: 'Verde Menta',   color: 'rgba(40,215,155,0.72)',   text: '#000' },
+  { name: 'Arancio',       color: 'rgba(255,145,20,0.80)',   text: '#000' },
+  { name: 'Viola Neon',    color: 'rgba(195,75,255,0.75)',   text: '#fff' },
+  { name: 'Azzurro',       color: 'rgba(20,185,255,0.72)',   text: '#000' },
+  { name: 'Rimuovi',       color: 'transparent',             text: '#fff' },
+];
+
+/* ─────────────────────────────────────────────────────────────────────
+   HIGHLIGHT TOOLBAR — floats at viewport coords when text is selected
+───────────────────────────────────────────────────────────────────── */
+export function HighlightToolbar() {
+  const [visible, setVisible] = useState(false);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+
+  useEffect(() => {
+    function onSelectionChange() {
+      const sel = document.getSelection();
+      if (!sel || sel.isCollapsed || sel.rangeCount === 0) {
+        setVisible(false);
+        return;
+      }
+      const range = sel.getRangeAt(0);
+      const container = range.commonAncestorContainer;
+      const canvasEl = document.getElementById('story-canvas-export');
+      if (!canvasEl || !canvasEl.contains(container)) {
+        setVisible(false);
+        return;
+      }
+      const rect = range.getBoundingClientRect();
+      if (rect.width === 0) { setVisible(false); return; }
+      setPos({ top: rect.top - 52, left: rect.left + rect.width / 2 });
+      setVisible(true);
+    }
+    document.addEventListener('selectionchange', onSelectionChange);
+    return () => document.removeEventListener('selectionchange', onSelectionChange);
+  }, []);
+
+  function applyHighlight(color) {
+    if (color === 'transparent') {
+      document.execCommand('removeFormat', false, null);
+    } else {
+      document.execCommand('hiliteColor', false, color);
+    }
+  }
+
+  if (!visible) return null;
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        top: pos.top,
+        left: pos.left,
+        transform: 'translateX(-50%)',
+        zIndex: 9999,
+        background: '#0d1324',
+        border: '1px solid rgba(255,255,255,0.18)',
+        borderRadius: 10,
+        padding: '6px 10px',
+        display: 'flex',
+        gap: 6,
+        alignItems: 'center',
+        boxShadow: '0 6px 24px rgba(0,0,0,0.6)',
+        pointerEvents: 'auto',
+      }}
+    >
+      <span style={{
+        fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.45)',
+        letterSpacing: '0.08em', textTransform: 'uppercase', marginRight: 4,
+        fontFamily: 'Inter, sans-serif',
+      }}>
+        Evidenzia
+      </span>
+      {HIGHLIGHT_COLORS.map((c) => (
+        <button
+          key={c.name}
+          title={c.name}
+          onMouseDown={(e) => {
+            e.preventDefault(); // keep text selection alive
+            applyHighlight(c.color);
+          }}
+          style={{
+            width: 26, height: 26,
+            borderRadius: 5,
+            border: c.color === 'transparent'
+              ? '1.5px solid rgba(255,255,255,0.3)'
+              : '1.5px solid rgba(0,0,0,0.2)',
+            background: c.color === 'transparent' ? 'rgba(255,255,255,0.07)' : c.color,
+            cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 11, color: c.text, fontWeight: 800,
+            fontFamily: 'Inter, sans-serif',
+            transition: 'transform 0.1s',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.18)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+        >
+          {c.color === 'transparent' ? '✕' : ''}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 /* ─────────────────────────────────────────────────────────────────────
    BRAND HEADER
@@ -9,7 +117,7 @@ function BrandHeader({ color, mutedColor, customLogo }) {
     <div style={{
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'center', // Centered horizontally
+      justifyContent: 'center',
       gap: 20,
       paddingTop: 44, paddingBottom: 24, paddingLeft: 40, paddingRight: 40,
       flexShrink: 0,
@@ -23,7 +131,6 @@ function BrandHeader({ color, mutedColor, customLogo }) {
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           flexShrink: 0,
         }}>
-          {/* Default SVG closer to real logo (no circle) */}
           <svg width="100%" height="100%" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
             <text x="25" y="80" fontSize="80" fontWeight="900" fontFamily="'Inter', sans-serif" fill={color} letterSpacing="-0.05em">R</text>
             <path d="M 15 85 A 45 45 0 0 0 95 55" stroke={color} strokeWidth="6" strokeLinecap="round" />
@@ -54,30 +161,13 @@ function BrandFooter({ color, isDark }) {
     <div style={{
       paddingTop: 20, paddingBottom: 24, paddingLeft: 32, paddingRight: 32,
       flexShrink: 0,
-      borderTop: `2px solid ${isDark ? '#f5ff85' : '#27509e'}`, // Yellow line for dark, Blue line for light
+      borderTop: `2px solid ${isDark ? '#f5ff85' : '#27509e'}`,
     }}>
       <p style={{
         fontSize: 18, fontWeight: 400, color, opacity: 0.8,
         lineHeight: 1.4, fontFamily: "'Inter', sans-serif", textAlign: 'center',
       }}>{BRAND.disclaimer}</p>
     </div>
-  );
-}
-
-/* ─────────────────────────────────────────────────────────────────────
-   DARK TEMPLATE BACKGROUND
-───────────────────────────────────────────────────────────────────── */
-function DarkTemplateBg() {
-  return (
-    <svg
-      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 0, opacity: 0.25 }}
-      viewBox="0 0 1080 1920" preserveAspectRatio="xMidYMid slice"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <polygon points="720,80 1080,80 1080,600" fill="#27509e" />
-      <polygon points="900,0 1080,0 1080,300" fill="#3461b8" opacity="0.5" />
-      <polygon points="600,1600 1080,1200 1080,1920" fill="#1b3a72" opacity="0.4" />
-    </svg>
   );
 }
 
@@ -102,13 +192,29 @@ function ImageBox({ imageBox }) {
 }
 
 /* ─────────────────────────────────────────────────────────────────────
-   EDITABLE TEXT NODE
+   EDITABLE TEXT NODE — supports rich HTML (highlights)
+   Uses a ref to imperatively set innerHTML, avoiding React re-render
+   conflicts with contentEditable.
 ───────────────────────────────────────────────────────────────────── */
-function EditableText({ field, style, placeholder, onFieldChange, setActiveField, activeField, content }) {
+function EditableText({ field, style, placeholder, onFieldChange, setActiveField, activeField, content, contentHtml }) {
   const isActive = activeField === field;
-  const value = content?.[field] || '';
+  const ref = useRef(null);
+
+  const plainText = content?.[field] || '';
+  const richHtml = contentHtml?.[field] || plainText.replace(/\n/g, '<br>');
+
+  // Only update DOM when NOT actively editing (avoids cursor jumps)
+  useLayoutEffect(() => {
+    if (ref.current && !isActive) {
+      if (ref.current.innerHTML !== richHtml) {
+        ref.current.innerHTML = richHtml;
+      }
+    }
+  }, [richHtml, isActive, field]);
+
   return (
     <div
+      ref={ref}
       contentEditable suppressContentEditableWarning
       style={{
         outline: 'none', cursor: 'text', borderRadius: 10,
@@ -120,8 +226,12 @@ function EditableText({ field, style, placeholder, onFieldChange, setActiveField
         ...style,
       }}
       onFocus={() => setActiveField(field)}
-      onBlur={(e) => { onFieldChange(field, e.currentTarget.innerText); setActiveField(null); }}
-      dangerouslySetInnerHTML={{ __html: value.replace(/\n/g, '<br>') }}
+      onBlur={(e) => {
+        const html = e.currentTarget.innerHTML;
+        const text = e.currentTarget.innerText;
+        onFieldChange(field, text, html);
+        setActiveField(null);
+      }}
       data-placeholder={placeholder}
     />
   );
@@ -132,7 +242,7 @@ function EditableText({ field, style, placeholder, onFieldChange, setActiveField
 ───────────────────────────────────────────────────────────────────── */
 function LayoutContent({ layout, state, tpl, onFieldChange, activeField, setActiveField }) {
   const { textColor, mutedColor, accentColor } = tpl;
-  const { content, imageBox, sizes } = state;
+  const { content, contentHtml, imageBox, sizes } = state;
   const s = sizes || {};
 
   // Helper for editable text with dynamic font size from state.sizes
@@ -145,6 +255,7 @@ function LayoutContent({ layout, state, tpl, onFieldChange, activeField, setActi
       activeField={activeField}
       setActiveField={setActiveField}
       content={content}
+      contentHtml={contentHtml}
     />
   );
 
@@ -161,6 +272,13 @@ function LayoutContent({ layout, state, tpl, onFieldChange, activeField, setActi
   };
 
   const bulletFontSize = s.bullets || 44;
+
+  // Build flattened content map so EditableText can look up bulletDesc_N keys
+  const flatContent = {
+    ...content,
+    ...Object.fromEntries((content.bulletsDesc || []).map((d, i) => [`bulletDesc_${i}`, d])),
+  };
+  const flatHtml = contentHtml || {};
 
   return (
     <div style={{
@@ -189,30 +307,60 @@ function LayoutContent({ layout, state, tpl, onFieldChange, activeField, setActi
       {zones.includes('image') && layout.imagePosition !== 'bottom' && <ImageBox imageBox={imageBox} />}
 
       {zones.includes('bullets') && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
-          {(content.bullets || []).map((bullet, i) => (
-            <div key={i} style={{ display: 'flex', gap: 28, alignItems: 'flex-start' }}>
-              <div style={{
-                width: 24, height: 24, borderRadius: '50%',
-                background: accentColor, flexShrink: 0, marginTop: 14,
-              }} />
-              <div
-                contentEditable suppressContentEditableWarning
-                style={{
-                  fontSize: bulletFontSize, fontWeight: 500, lineHeight: 1.42,
-                  color: textColor, outline: 'none', flex: 1,
-                  wordBreak: 'break-word', whiteSpace: 'pre-wrap',
-                  borderRadius: 8,
-                  paddingTop: 4, paddingBottom: 4, paddingLeft: 8, paddingRight: 8,
-                  marginTop: -4, marginBottom: -4, marginLeft: -8, marginRight: -8,
-                  boxShadow: activeField === `bullet_${i}` ? '0 0 0 3px rgba(245,255,133,0.35)' : undefined,
-                }}
-                onFocus={() => setActiveField(`bullet_${i}`)}
-                onBlur={(e) => { onFieldChange(`bullet_${i}`, e.currentTarget.innerText); setActiveField(null); }}
-                dangerouslySetInnerHTML={{ __html: bullet }}
-              />
-            </div>
-          ))}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+          {(content.bullets || []).map((bullet, i) => {
+            const desc = content.bulletsDesc?.[i];
+            const bulletFieldKey = `bullet_${i}`;
+            const descFieldKey = `bulletDesc_${i}`;
+            const bulletHtml = flatHtml[bulletFieldKey] || bullet || '';
+
+            return (
+              <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {/* ── Bullet row ── */}
+                <div style={{ display: 'flex', gap: 28, alignItems: 'flex-start' }}>
+                  <div style={{
+                    width: 24, height: 24, borderRadius: '50%',
+                    background: accentColor, flexShrink: 0, marginTop: 14,
+                  }} />
+                  <BulletEditable
+                    index={i}
+                    bulletHtml={bulletHtml}
+                    bulletFontSize={bulletFontSize}
+                    textColor={textColor}
+                    activeField={activeField}
+                    setActiveField={setActiveField}
+                    onFieldChange={onFieldChange}
+                  />
+                </div>
+
+                {/* ── Sub-description (shown when bulletsDesc[i] is non-empty) ── */}
+                {(desc !== undefined && desc !== null) && (
+                  <div style={{
+                    marginLeft: 52,
+                    paddingLeft: 16,
+                    borderLeft: `3px solid ${accentColor}`,
+                    opacity: desc ? 1 : 0.35,
+                  }}>
+                    <EditableText
+                      field={descFieldKey}
+                      style={{
+                        fontSize: Math.round(bulletFontSize * 0.72),
+                        fontWeight: 400,
+                        lineHeight: 1.55,
+                        color: mutedColor,
+                      }}
+                      placeholder="Aggiungi descrizione al punto…"
+                      onFieldChange={onFieldChange}
+                      activeField={activeField}
+                      setActiveField={setActiveField}
+                      content={flatContent}
+                      contentHtml={flatHtml}
+                    />
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -238,19 +386,55 @@ function LayoutContent({ layout, state, tpl, onFieldChange, activeField, setActi
 }
 
 /* ─────────────────────────────────────────────────────────────────────
+   BULLET EDITABLE — separate component so useLayoutEffect ref is stable
+───────────────────────────────────────────────────────────────────── */
+function BulletEditable({ index, bulletHtml, bulletFontSize, textColor, activeField, setActiveField, onFieldChange }) {
+  const isActive = activeField === `bullet_${index}`;
+  const ref = useRef(null);
+
+  useLayoutEffect(() => {
+    if (ref.current && !isActive) {
+      if (ref.current.innerHTML !== bulletHtml) {
+        ref.current.innerHTML = bulletHtml;
+      }
+    }
+  }, [bulletHtml, isActive]);
+
+  return (
+    <div
+      ref={ref}
+      contentEditable suppressContentEditableWarning
+      style={{
+        fontSize: bulletFontSize, fontWeight: 500, lineHeight: 1.42,
+        color: textColor, outline: 'none', flex: 1,
+        wordBreak: 'break-word', whiteSpace: 'pre-wrap',
+        borderRadius: 8,
+        paddingTop: 4, paddingBottom: 4, paddingLeft: 8, paddingRight: 8,
+        marginTop: -4, marginBottom: -4, marginLeft: -8, marginRight: -8,
+        boxShadow: isActive ? '0 0 0 3px rgba(245,255,133,0.35)' : undefined,
+        transition: 'box-shadow 0.15s',
+      }}
+      onFocus={() => setActiveField(`bullet_${index}`)}
+      onBlur={(e) => {
+        const html = e.currentTarget.innerHTML;
+        const text = e.currentTarget.innerText;
+        onFieldChange(`bullet_${index}`, text, html);
+        setActiveField(null);
+      }}
+    />
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────────────
    STORY CANVAS — main export
 ───────────────────────────────────────────────────────────────────── */
 const StoryCanvas = React.forwardRef(function StoryCanvas(
-  { state, layout, onFieldChange, activeField, setActiveField, viewMode },
+  { state, layout, onFieldChange, activeField, setActiveField },
   ref
 ) {
   const tpl = TEMPLATES.find((t) => t.id === state.templateId) || TEMPLATES[0];
 
-  // If the user uploaded a custom background, use it. Otherwise, use the template's built-in background image.
   const currentBgImage = state.backgroundImage || tpl.bgImage;
-
-  // We ONLY hide our generated CSS header & footer if we are using the user's baked-in template images.
-  // If they upload a custom background (e.g. a photo), we MUST show the generated header & footer on top of it.
   const usingBakedTemplate = !state.backgroundImage && !!tpl.bgImage;
 
   const canvasBg = {
@@ -271,19 +455,14 @@ const StoryCanvas = React.forwardRef(function StoryCanvas(
         ...canvasBg,
       }}
     >
-
-
-      {/* If using a custom photo background, overlay a dark tint to make text readable */}
       {state.backgroundImage && (
         <div style={{ position: 'absolute', inset: 0, background: 'rgba(10,14,26,0.65)', zIndex: 0 }} />
       )}
 
-      {/* Top accent line (only needed if NOT using the baked templates which already have it) */}
       {!usingBakedTemplate && (
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 6, background: `linear-gradient(90deg, ${tpl.accentColor}, transparent)`, zIndex: 3 }} />
       )}
 
-      {/* We use visibility: hidden to preserve the exact spacing that the header would take up, so content doesn't overlap the baked-in logo */}
       <div className="canvas-header" style={{ position: 'relative', zIndex: 2, visibility: usingBakedTemplate ? 'hidden' : 'visible' }}>
         <BrandHeader color={tpl.logoColor} mutedColor={tpl.mutedColor} customLogo={state.customLogo} />
       </div>

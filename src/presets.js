@@ -115,7 +115,7 @@ export const LAYOUTS = [
 ];
 
 // ─── TEMPLATE BACKGROUNDS ────────────────────────────────────────────
-import { LIGHT_BG_B64, DARK_BG_B64 } from './assets_b64.js';
+import { LIGHT_BG_B64, DARK_BG_B64, DARK_BG_FIXED, LIGHT_BG_FIXED } from './assets_b64.js';
 
 export const TEMPLATES = [
   {
@@ -139,6 +139,30 @@ export const TEMPLATES = [
     accentColor: '#27509e',
     logoColor: '#101628',
     isDark: false,
+  },
+  {
+    id: 'dark-fixed',
+    name: 'Dark Template (Fisso)',
+    bg: '#101628',
+    bgImage: DARK_BG_FIXED,
+    textColor: '#ffffff',
+    mutedColor: 'rgba(255,255,255,0.7)',
+    accentColor: '#f5ff85',
+    logoColor: '#ffffff',
+    isDark: true,
+    isFixed: true,
+  },
+  {
+    id: 'light-fixed',
+    name: 'Light Template (Fisso)',
+    bg: '#ffffff',
+    bgImage: LIGHT_BG_FIXED,
+    textColor: '#101628',
+    mutedColor: 'rgba(16,22,40,0.65)',
+    accentColor: '#27509e',
+    logoColor: '#101628',
+    isDark: false,
+    isFixed: true,
   },
 ];
 

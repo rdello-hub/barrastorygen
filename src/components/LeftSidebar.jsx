@@ -229,13 +229,30 @@ export default function LeftSidebar({
                     key={t.id}
                     onClick={() => setTemplate(t.id)}
                     className={`theme-row${state.templateId === t.id ? ' active' : ''}`}
+                    title={t.isFixed ? 'Sfondo fisso con logo e disclaimer' : 'Sfondo personalizzabile'}
                   >
                     <div className="theme-dot" style={{
                       background: t.bg,
                       border: t.id === 'light' ? '1.5px solid #ccc' : 'none',
                     }} />
                     <span className="theme-name">{t.name}</span>
-                    {state.templateId === t.id && (
+                    {t.isFixed && (
+                      <span style={{ 
+                        marginLeft: 'auto', 
+                        fontSize: 9, 
+                        fontWeight: 700, 
+                        background: 'rgba(245,255,133,0.2)',
+                        color: 'var(--yellow)',
+                        borderRadius: 3,
+                        padding: '2px 6px',
+                        letterSpacing: '0.05em',
+                        textTransform: 'uppercase'
+                      }}>📌 Fisso</span>
+                    )}
+                    {state.templateId === t.id && !t.isFixed && (
+                      <span style={{ marginLeft: 'auto', color: 'var(--yellow)', fontSize: 14 }}>✓</span>
+                    )}
+                    {state.templateId === t.id && t.isFixed && (
                       <span style={{ marginLeft: 'auto', color: 'var(--yellow)', fontSize: 14 }}>✓</span>
                     )}
                   </div>

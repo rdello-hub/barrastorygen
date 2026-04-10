@@ -1,7 +1,4 @@
-// ─── LAYOUT DEFINITIONS ──────────────────────────────────────────────
-// Each layout defines the visual structure: which zones appear and in what order.
 // zones: 'title' | 'subtitle' | 'bullets' | 'paragraph1' | 'paragraph2' | 'stat' | 'image' | 'ctaLead' | 'ctaMain' | 'ctaSub'
-import { LIGHT_BG_B64, DARK_BG_B64 } from './assets_b64.js';
 
 export const LAYOUTS = [
   {
@@ -118,12 +115,15 @@ export const LAYOUTS = [
 ];
 
 // ─── TEMPLATE BACKGROUNDS ────────────────────────────────────────────
+import bgDark from './assets/sfondo-dark.png';
+import bgLight from './assets/sfondo-light.png';
+
 export const TEMPLATES = [
   {
     id: 'dark',
     name: 'Dark Navy',
     bg: '#101628',
-    bgImage: DARK_BG_B64, // Inlined Base64 for robust export
+    bgImage: bgDark,
     textColor: '#ffffff',
     mutedColor: 'rgba(255,255,255,0.7)',
     accentColor: '#f5ff85',
@@ -134,7 +134,7 @@ export const TEMPLATES = [
     id: 'light',
     name: 'Light White',
     bg: '#ffffff',
-    bgImage: LIGHT_BG_B64, // Inlined Base64 for robust export
+    bgImage: bgLight,
     textColor: '#101628',
     mutedColor: 'rgba(16,22,40,0.65)',
     accentColor: '#27509e',

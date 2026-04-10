@@ -463,8 +463,29 @@ const StoryCanvas = React.forwardRef(function StoryCanvas(
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 6, background: `linear-gradient(90deg, ${tpl.accentColor}, transparent)`, zIndex: 3 }} />
       )}
 
-      <div className="canvas-header" style={{ position: 'relative', zIndex: 2, visibility: usingBakedTemplate ? 'hidden' : 'visible' }}>
+      {/* Header: visible as ghost guide in editor when using baked template */}
+      <div
+        className="canvas-header"
+        data-export-hide={usingBakedTemplate ? 'true' : undefined}
+        style={{
+          position: 'relative', zIndex: 2,
+          opacity: usingBakedTemplate ? 0.28 : 1,
+          ...(usingBakedTemplate ? {
+            outline: '2px dashed rgba(245,255,133,0.35)',
+            outlineOffset: '-4px',
+          } : {}),
+        }}
+      >
         <BrandHeader color={tpl.logoColor} mutedColor={tpl.mutedColor} customLogo={state.customLogo} />
+        {usingBakedTemplate && (
+          <div style={{
+            position: 'absolute', top: '50%', left: '50%',
+            transform: 'translate(-50%,-50%)',
+            fontSize: 20, fontWeight: 700, color: 'rgba(245,255,133,0.6)',
+            letterSpacing: '0.12em', textTransform: 'uppercase',
+            pointerEvents: 'none', whiteSpace: 'nowrap',
+          }}>LOGO AREA — GUIDA</div>
+        )}
       </div>
 
       <div className="canvas-content" style={{ position: 'relative', zIndex: 2, flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -476,8 +497,29 @@ const StoryCanvas = React.forwardRef(function StoryCanvas(
         />
       </div>
 
-      <div className="canvas-footer" style={{ position: 'relative', zIndex: 2, visibility: usingBakedTemplate ? 'hidden' : 'visible' }}>
+      {/* Footer: visible as ghost guide in editor when using baked template */}
+      <div
+        className="canvas-footer"
+        data-export-hide={usingBakedTemplate ? 'true' : undefined}
+        style={{
+          position: 'relative', zIndex: 2,
+          opacity: usingBakedTemplate ? 0.28 : 1,
+          ...(usingBakedTemplate ? {
+            outline: '2px dashed rgba(245,255,133,0.35)',
+            outlineOffset: '-4px',
+          } : {}),
+        }}
+      >
         <BrandFooter color={tpl.logoColor} isDark={tpl.isDark} />
+        {usingBakedTemplate && (
+          <div style={{
+            position: 'absolute', top: '50%', left: '50%',
+            transform: 'translate(-50%,-50%)',
+            fontSize: 20, fontWeight: 700, color: 'rgba(245,255,133,0.6)',
+            letterSpacing: '0.12em', textTransform: 'uppercase',
+            pointerEvents: 'none', whiteSpace: 'nowrap',
+          }}>DISCLAIMER AREA — GUIDA</div>
+        )}
       </div>
     </div>
   );

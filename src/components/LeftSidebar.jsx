@@ -3,7 +3,7 @@ import { LAYOUTS, TEMPLATES } from '../presets.js';
 import { callCopilot } from '../ai.js';
 
 export default function LeftSidebar({
-  state, setLayout, setTemplate, setBg, setImageBox, setCustomLogo, setApiKey, setContent, onAutoParse, activeTabOverride
+  state, setLayout, setTemplate, setBg, setImageBox, setCustomLogo, setAiProp, setContent, onAutoParse, activeTabOverride
 }) {
   const [activeTab, setActiveTab] = useState('layout');
 
@@ -46,7 +46,7 @@ export default function LeftSidebar({
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiTextPaste, setAiTextPaste] = useState('');
 
-  async function handleAI(actionType) {
+    async function handleAI(actionType) {
     if (!state.groqApiKey) return;
     setIsGenerating(true);
     setAiResponse('');
@@ -71,7 +71,7 @@ export default function LeftSidebar({
         "content": {
           "title": "...",
           "subtitle": "...",
-          "description": "...",
+          "paragraph1": "...",
           "stat": "...",
           "label": "...",
           "bullets": ["...", "...", "..."],
@@ -113,7 +113,12 @@ export default function LeftSidebar({
     }
 
     try {
-      const result = await callCopilot(state.groqApiKey, systemPrompt, userMessage);
+      const config = {
+        provider: state.aiProvider || 'groq',
+        model: state.aiModel || (state.aiProvider === 'openrouter' ? 'anthropic/claude-3.5-sonnet' : 'llama-3.3-70b-versatile')
+      };
+      
+      const result = await callCopilot(state.groqApiKey, systemPrompt, userMessage, config);
       
       if (actionType === 'magic' || actionType === 'parse_paste') {
         try {
@@ -345,18 +350,58 @@ export default function LeftSidebar({
           <>
             <div className="control-group">
               <div className="section-label">Configurazione AI</div>
+              
+              <div style={{ display: 'flex', gap: 4, marginBottom: 12 }}>
+                <button 
+                  className={`btn ${state.aiProvider === 'groq' ? 'btn-primary' : 'btn-ghost'}`} 
+                  style={{ flex: 1, fontSize: 11, padding: '6px' }}
+                  onClick={() => {
+                    setAiProp('aiProvider', 'groq');
+                    setAiProp('aiModel', 'llama-3.3-70b-versatile');
+                  }}
+                >
+                  Groq (Llama)
+                </button>
+                <button 
+                  className={`btn ${state.aiProvider === 'openrouter' ? 'btn-primary' : 'btn-ghost'}`} 
+                  style={{ flex: 1, fontSize: 11, padding: '6px' }}
+                  onClick={() => {
+                    setAiProp('aiProvider', 'openrouter');
+                    setAiProp('aiModel', 'anthropic/claude-3.5-sonnet');
+                  }}
+                >
+                  OpenRouter (Claude)
+                </button>
+              </div>
+
               <div style={{ fontSize: 11, color: 'var(--white-60)', marginBottom: 8 }}>
-                Inserisci la chiave API di Groq. Viene salvata solo nel tuo browser in modo sicuro.
+                Inserisci la chiave API {state.aiProvider === 'openrouter' ? 'OpenRouter' : 'Groq'}.
               </div>
               <input
                 type="password"
-                placeholder="gsk_..."
+                placeholder={state.aiProvider === 'openrouter' ? "sk-or-..." : "gsk_..."}
                 value={state.groqApiKey || ''}
-                onChange={(e) => setApiKey(e.target.value)}
+                onChange={(e) => setAiProp('groqApiKey', e.target.value)}
               />
+              
+              {state.aiProvider === 'openrouter' && (
+                <div style={{ marginTop: 12 }}>
+                  <div className="control-label">Modello Premium</div>
+                  <select 
+                    style={{ width: '100%', padding: '8px', background: 'var(--white-10)', color: 'white', border: '1px solid var(--white-20)', borderRadius: 4, fontSize: 12 }}
+                    value={state.aiModel}
+                    onChange={(e) => setAiProp('aiModel', e.target.value)}
+                  >
+                    <option value="anthropic/claude-3.5-sonnet">Claude 3.5 Sonnet (Best Copy)</option>
+                    <option value="google/gemini-2.0-flash-001">Gemini 2.0 Flash (Fast & Smart)</option>
+                    <option value="openai/gpt-4o">GPT-4o (Standard Pro)</option>
+                  </select>
+                </div>
+              )}
+
               {!state.groqApiKey && (
                 <div style={{ fontSize: 11, color: 'var(--yellow)', marginTop: 8 }}>
-                  ☝️ Serve una chiave API di Groq gratuita per abilitare l'intelligenza LLaMA-3.
+                  ☝️ Inserisci la chiave per abilitare il Copilot.
                 </div>
               )}
             </div>

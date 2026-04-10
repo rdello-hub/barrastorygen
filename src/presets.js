@@ -161,7 +161,9 @@ export const DEFAULT_STATE = {
     roundness: 12,
   },
   customLogo: null, // Holds a base64 or URL for the real logo
-  groqApiKey: '',   // API key for the AI Copilot (stored locally)
+  groqApiKey: '', // API key (stored locally in browser)
+  aiProvider: 'groq', // 'groq' | 'openrouter'
+  aiModel: 'llama-3.3-70b-versatile', // Default model
   // Font sizes at 1080×1920 canvas resolution (px)
   sizes: {
     title:     100,

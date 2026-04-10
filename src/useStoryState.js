@@ -85,9 +85,9 @@ export function useStoryState(initial) {
     update((prev) => ({ ...prev, customLogo: logoBase64 }));
   }, [update]);
 
-  // AI API Key helper
-  const setApiKey = useCallback((key) => {
-    update((prev) => ({ ...prev, groqApiKey: key }));
+  // AI Config helper
+  const setAiProp = useCallback((key, value) => {
+    update((prev) => ({ ...prev, [key]: value }));
   }, [update]);
 
   return {
@@ -104,7 +104,7 @@ export function useStoryState(initial) {
     setImageBox,
     setSize,
     setCustomLogo,
-    setApiKey,
+    setAiProp,
     saved,
   };
 }

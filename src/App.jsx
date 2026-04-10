@@ -17,10 +17,7 @@ export default function App() {
   const [isExporting, setIsExporting] = useState(false);
   const [activeMobileTab, setActiveMobileTab] = useState('layout'); // layout | content | design | ai | image
 
-  const {
-    state, update,
-    setContent, setLayout, setTemplate, setBg, setViewMode,
-    addBullet, removeBullet, setBullet, setImageBox, setSize, setCustomLogo, setApiKey,
+    addBullet, removeBullet, setBullet, setImageBox, setSize, setCustomLogo, setAiProp,
     saved,
   } = useStoryState(DEFAULT_STATE);
 
@@ -239,7 +236,7 @@ export default function App() {
               setBg={setBg}
               setImageBox={setImageBox}
               setCustomLogo={setCustomLogo}
-              setApiKey={setApiKey}
+              setAiProp={setAiProp}
               setContent={setContent}
               onAutoParse={handleAutoParse}
               activeTabOverride={activeMobileTab === 'ai' ? 'copilot' : activeMobileTab === 'design' ? 'design' : activeMobileTab === 'image' ? 'image' : 'layout'}

@@ -437,13 +437,6 @@ const StoryCanvas = React.forwardRef(function StoryCanvas(
   const currentBgImage = state.backgroundImage || tpl.bgImage;
   const usingBakedTemplate = !state.backgroundImage && !!tpl.bgImage;
 
-  const canvasBg = {
-    backgroundColor: tpl.bg,
-    ...(currentBgImage
-      ? { backgroundImage: `url(${currentBgImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }
-      : {}),
-  };
-
   return (
     <div
       ref={ref} id="story-canvas-export"
@@ -452,40 +445,31 @@ const StoryCanvas = React.forwardRef(function StoryCanvas(
         position: 'relative', overflow: 'hidden',
         fontFamily: "'Inter', sans-serif",
         display: 'flex', flexDirection: 'column',
-        ...canvasBg,
+        backgroundColor: tpl.bg,
       }}
     >
+      {/* Real <img> background for resilient export */}
+      {currentBgImage && (
+        <img 
+          src={currentBgImage} 
+          alt="" 
+          style={{ 
+            position: 'absolute', inset: 0, width: '100%', height: '100%', 
+            objectFit: 'cover', zIndex: 0 
+          }} 
+        />
+      )}
+
       {state.backgroundImage && (
-        <div style={{ position: 'absolute', inset: 0, background: 'rgba(10,14,26,0.65)', zIndex: 0 }} />
+        <div style={{ position: 'absolute', inset: 0, background: 'rgba(10,14,26,0.65)', zIndex: 1 }} />
       )}
 
       {!usingBakedTemplate && (
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 6, background: `linear-gradient(90deg, ${tpl.accentColor}, transparent)`, zIndex: 3 }} />
       )}
 
-      {/* Header: visible as ghost guide in editor when using baked template */}
-      <div
-        className="canvas-header"
-        data-export-hide={usingBakedTemplate ? 'true' : undefined}
-        style={{
-          position: 'relative', zIndex: 2,
-          opacity: usingBakedTemplate ? 0.28 : 1,
-          ...(usingBakedTemplate ? {
-            outline: '2px dashed rgba(245,255,133,0.35)',
-            outlineOffset: '-4px',
-          } : {}),
-        }}
-      >
+      <div className="canvas-header" style={{ position: 'relative', zIndex: 2 }}>
         <BrandHeader color={tpl.logoColor} mutedColor={tpl.mutedColor} customLogo={state.customLogo} />
-        {usingBakedTemplate && (
-          <div style={{
-            position: 'absolute', top: '50%', left: '50%',
-            transform: 'translate(-50%,-50%)',
-            fontSize: 20, fontWeight: 700, color: 'rgba(245,255,133,0.6)',
-            letterSpacing: '0.12em', textTransform: 'uppercase',
-            pointerEvents: 'none', whiteSpace: 'nowrap',
-          }}>LOGO AREA — GUIDA</div>
-        )}
       </div>
 
       <div className="canvas-content" style={{ position: 'relative', zIndex: 2, flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -497,29 +481,8 @@ const StoryCanvas = React.forwardRef(function StoryCanvas(
         />
       </div>
 
-      {/* Footer: visible as ghost guide in editor when using baked template */}
-      <div
-        className="canvas-footer"
-        data-export-hide={usingBakedTemplate ? 'true' : undefined}
-        style={{
-          position: 'relative', zIndex: 2,
-          opacity: usingBakedTemplate ? 0.28 : 1,
-          ...(usingBakedTemplate ? {
-            outline: '2px dashed rgba(245,255,133,0.35)',
-            outlineOffset: '-4px',
-          } : {}),
-        }}
-      >
+      <div className="canvas-footer" style={{ position: 'relative', zIndex: 2 }}>
         <BrandFooter color={tpl.logoColor} isDark={tpl.isDark} />
-        {usingBakedTemplate && (
-          <div style={{
-            position: 'absolute', top: '50%', left: '50%',
-            transform: 'translate(-50%,-50%)',
-            fontSize: 20, fontWeight: 700, color: 'rgba(245,255,133,0.6)',
-            letterSpacing: '0.12em', textTransform: 'uppercase',
-            pointerEvents: 'none', whiteSpace: 'nowrap',
-          }}>DISCLAIMER AREA — GUIDA</div>
-        )}
       </div>
     </div>
   );

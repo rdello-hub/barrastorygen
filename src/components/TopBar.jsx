@@ -101,10 +101,6 @@ export async function exportToPng(canvasRef, { forceDownload = false } = {}) {
       await new Promise(r => setTimeout(r, 100)); // allow render frame
     }
 
-    // Hide "guide" overlays that are only for editor reference (baked into bg template)
-    const guideEls = node.querySelectorAll('[data-export-hide="true"]');
-    guideEls.forEach(el => { el.style.opacity = '0'; });
-
     const dataUrl = await toPng(node, {
       pixelRatio: 2,
       width: 1080,
@@ -167,12 +163,6 @@ export async function exportToPng(canvasRef, { forceDownload = false } = {}) {
       parent.style.transform = savedTransform;
       parent.style.width = savedWidth;
       parent.style.height = savedHeight;
-    }
-    // Restore guide overlays
-    if (node) {
-      node.querySelectorAll('[data-export-hide="true"]').forEach(el => {
-        el.style.opacity = '';
-      });
     }
   }
 }
